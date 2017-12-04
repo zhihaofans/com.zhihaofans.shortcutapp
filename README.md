@@ -1,5 +1,7 @@
 # com.zhihaofans.shortcutapp
 
+![](https://i.loli.net/2017/12/04/5a256a590d28f.png)
+
 下载链接 : 
 - [酷安网](https://www.coolapk.com/apk/com.zhihaofans.shortcutapp)
 
