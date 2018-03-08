@@ -5,7 +5,7 @@
 下载链接 : 
 - [酷安网](https://www.coolapk.com/apk/com.zhihaofans.shortcutapp)
 
-- [Google Play](https://play.google.com/store/apps/details?id=com.zhihaofans.shortcutapp)
+- [Google Play](https://play.google.com/store/apps/details?id=com.zhihaofans.shortcutapp)  (签名不兼容)
 
 ### 预计更新:
 1. 用kotlin重写代码
