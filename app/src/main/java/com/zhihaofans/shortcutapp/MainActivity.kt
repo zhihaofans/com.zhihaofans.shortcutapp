@@ -1,5 +1,6 @@
 package com.zhihaofans.shortcutapp
 
+import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -13,7 +14,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.core.graphics.drawable.toBitmap
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,8 +34,10 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Android
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.dp
 import com.zhihaofans.shortcutapp.ui.theme.ShortcutsAppTheme
+import io.zhihao.library.android.kotlinEx.appName
 
 class MainActivity : ComponentActivity() {
     @ExperimentalMaterial3Api
@@ -39,6 +45,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
+            val pm = packageManager
             ShortcutsAppTheme {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
@@ -57,24 +64,38 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 ) { innerPadding ->
-                    val sampleList = List(20) { "Item #$it" }
-
+                    val apps = remember {
+                        pm.getInstalledApplications(PackageManager.GET_META_DATA)
+                            .filter { pm.getLaunchIntentForPackage(it.packageName) != null }
+                            .sortedBy {
+                                pm.getApplicationLabel(it).toString()
+                            }
+                    }
                     LazyColumn(
                         modifier = Modifier
                             .padding(innerPadding)
-                            .fillMaxSize()
+                            .fillMaxWidth()
                     ) {
-                        items(sampleList) { item ->
+                        items(
+                            items = apps,
+                            key = { it.packageName }
+                        ) { app ->
                             Row(
                                 modifier = Modifier
-                                    .fillMaxSize()
+                                    .fillMaxWidth()
                                     .clickable { /* TODO: item click */ }
                                     .padding(horizontal = 16.dp, vertical = 12.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.Android,
-                                    contentDescription = "app icon",
+                                val bitmap = remember(app.packageName) {
+                                    pm.getApplicationIcon(app).toBitmap(
+                                        width = 80,
+                                        height = 80
+                                    )
+                                }
+                                Image(
+                                    bitmap = bitmap.asImageBitmap(),
+                                    contentDescription = null,
                                     modifier = Modifier.size(40.dp)
                                 )
 
@@ -82,11 +103,11 @@ class MainActivity : ComponentActivity() {
 
                                 Column {
                                     Text(
-                                        text = "App Name $item",
+                                        text = app.appName,
                                         style = MaterialTheme.typography.bodyLarge
                                     )
                                     Text(
-                                        text = "com.example.app${item}",
+                                        text = app.packageName,
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
