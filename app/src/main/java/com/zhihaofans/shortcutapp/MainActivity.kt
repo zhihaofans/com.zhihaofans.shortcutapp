@@ -43,6 +43,8 @@ import io.zhihao.library.android.kotlinEx.appVersionCodeString
 import io.zhihao.library.android.kotlinEx.appVersionName
 import io.zhihao.library.android.kotlinEx.getAppIcon
 import io.zhihao.library.android.kotlinEx.isNotNullAndEmpty
+import io.zhihao.library.android.util.AlertUtil
+import io.zhihao.library.android.util.AppUtil
 import io.zhihao.library.android.util.ShortcutsUtil
 
 class MainActivity : ComponentActivity() {
@@ -53,10 +55,11 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
+            val alertUtil = AlertUtil(this@MainActivity)
             ShortcutsAppTheme {
                 Scaffold(modifier = Modifier.fillMaxSize(), topBar = {
                     TopAppBar(
-                        title = { Text("Shortcut App") },
+                        title = { Text("Shortcut App v${AppUtil.getAppVersionName()}") },
                         colors = TopAppBarDefaults.topAppBarColors(
                             containerColor = MaterialTheme.colorScheme.primary,
                             titleContentColor = MaterialTheme.colorScheme.onPrimary
@@ -93,9 +96,23 @@ class MainActivity : ComponentActivity() {
 //                                            ShortcutManagerCompat.removeDynamicShortcuts(
 //                                                this@MainActivity, listOf(app.packageName)
 //                                            )
-                                            ShortcutsUtil().removeShortcut(app.packageName)
+                                            alertUtil.showInputAlert(
+                                                title = "删除快捷方式",
+                                                inputText = "确定要删除这个吗：" + app.appName,
+                                                onClick = { text, dialog ->
+                                                    ShortcutsUtil().removeShortcut(
+                                                        app.packageName
+                                                    )
+                                                })
+
                                         } else {
-                                            pushShortcut(app.packageName)
+                                            alertUtil.showInputAlert(
+                                                title = "添加快捷方式",
+                                                inputText = "确定要添加这个吗：" + app.appName,
+                                                onClick = { text, dialog ->
+                                                    pushShortcut(app.packageName)
+                                                })
+
                                         }
                                     }
                                     .padding(horizontal = 16.dp, vertical = 12.dp),
