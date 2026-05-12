@@ -34,19 +34,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.pm.ShortcutManagerCompat
+import androidx.core.graphics.drawable.IconCompat
 import androidx.core.graphics.drawable.toBitmap
 import com.zhihaofans.shortcutapp.ui.theme.ShortcutsAppTheme
 import io.zhihao.library.android.kotlinEx.appName
 import io.zhihao.library.android.kotlinEx.appVersionCodeString
 import io.zhihao.library.android.kotlinEx.appVersionName
+import io.zhihao.library.android.kotlinEx.getAppIcon
+import io.zhihao.library.android.kotlinEx.isNotNullAndEmpty
+import io.zhihao.library.android.util.ShortcutsUtil
 
 class MainActivity : ComponentActivity() {
+    private val pm by lazy { packageManager }
+
     @ExperimentalMaterial3Api
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            val pm = packageManager
             ShortcutsAppTheme {
                 Scaffold(modifier = Modifier.fillMaxSize(), topBar = {
                     TopAppBar(
@@ -78,7 +84,20 @@ class MainActivity : ComponentActivity() {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { /* TODO: item click */ }
+                                    .clickable {
+                                        val hasPushed =
+                                            ShortcutManagerCompat.getDynamicShortcuts(this@MainActivity)
+                                                .any { it.id == app.packageName }
+                                        if (hasPushed) {
+                                            //Remove the shortcut
+//                                            ShortcutManagerCompat.removeDynamicShortcuts(
+//                                                this@MainActivity, listOf(app.packageName)
+//                                            )
+                                            ShortcutsUtil().removeShortcut(app.packageName)
+                                        } else {
+                                            pushShortcut(app.packageName)
+                                        }
+                                    }
                                     .padding(horizontal = 16.dp, vertical = 12.dp),
                                 verticalAlignment = Alignment.CenterVertically) {
                                 val bitmap = remember(app.packageName) {
@@ -104,7 +123,6 @@ class MainActivity : ComponentActivity() {
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
-
                                     Text(
                                         text = app.packageName,
                                         style = MaterialTheme.typography.bodySmall,
@@ -116,6 +134,20 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+        }
+    }
+
+    private fun pushShortcut(packageName: String) {
+        if (packageName.isNotNullAndEmpty()) {
+            val appInfo = pm.getApplicationInfo(packageName, 0)
+            val launchIntent = pm.getLaunchIntentForPackage(packageName) ?: return
+            ShortcutsUtil().pushShortcut(
+                packageName,
+                launchIntent,
+                appInfo.appName,
+                IconCompat.createWithBitmap(appInfo.getAppIcon()?.toBitmap()!!)
+            )
+
         }
     }
 }
