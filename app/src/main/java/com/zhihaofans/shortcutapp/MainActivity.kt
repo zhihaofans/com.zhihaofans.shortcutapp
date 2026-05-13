@@ -18,7 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ClearAll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -27,12 +27,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
@@ -42,20 +40,22 @@ import io.zhihao.library.android.kotlinEx.appName
 import io.zhihao.library.android.kotlinEx.appVersionCodeString
 import io.zhihao.library.android.kotlinEx.appVersionName
 import io.zhihao.library.android.kotlinEx.getAppIcon
-import io.zhihao.library.android.kotlinEx.isNotNullAndEmpty
 import io.zhihao.library.android.util.AlertUtil
 import io.zhihao.library.android.util.AppUtil
 import io.zhihao.library.android.util.ShortcutsUtil
+import io.zhihao.library.android.util.ToastUtil
 
 class MainActivity : ComponentActivity() {
     private val pm by lazy { packageManager }
+
+    private val alertUtil = AlertUtil(this)
+    private val toastUtil = ToastUtil(this)
 
     @ExperimentalMaterial3Api
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            val alertUtil = AlertUtil(this@MainActivity)
             ShortcutsAppTheme {
                 Scaffold(modifier = Modifier.fillMaxSize(), topBar = {
                     TopAppBar(
@@ -66,8 +66,21 @@ class MainActivity : ComponentActivity() {
                         )
                     )
                 }, floatingActionButton = {
-                    FloatingActionButton(onClick = { /* TODO: add action */ }) {
-                        Icon(Icons.Default.Add, contentDescription = "Add")
+                    FloatingActionButton(onClick = {
+                        /* TODO: add action */
+                        if (ShortcutsUtil().getAllShortcuts().isEmpty()) {
+                            toastUtil.showShortToast("没有快捷方式可以删除了")
+                        } else {
+                            alertUtil.showInputAlert(
+                                title = "确定要删除所有快捷方式吗",
+                                inputText = ShortcutsUtil().getCount().toString() + "个快捷方式",
+                                onClick = { text, dialog ->
+                                    ShortcutManagerCompat.removeAllDynamicShortcuts(this)
+                                    toastUtil.showShortToast("已删除所有快捷方式")
+                                })
+                        }
+                    }) {
+                        Icon(Icons.Default.ClearAll, contentDescription = "Remove All Shortcuts")
                     }
                 }) { innerPadding ->
                     val apps = remember {
@@ -97,18 +110,19 @@ class MainActivity : ComponentActivity() {
 //                                                this@MainActivity, listOf(app.packageName)
 //                                            )
                                             alertUtil.showInputAlert(
-                                                title = "删除快捷方式",
-                                                inputText = "确定要删除这个吗：" + app.appName,
+                                                title = "确定要删除这个快捷方式吗",
+                                                inputText = app.appName,
                                                 onClick = { text, dialog ->
                                                     ShortcutsUtil().removeShortcut(
                                                         app.packageName
                                                     )
+                                                    toastUtil.showShortToast("已删除快捷方式")
                                                 })
 
                                         } else {
                                             alertUtil.showInputAlert(
-                                                title = "添加快捷方式",
-                                                inputText = "确定要添加这个吗：" + app.appName,
+                                                title = "确定要添加这个快捷方式吗",
+                                                inputText = app.appName,
                                                 onClick = { text, dialog ->
                                                     pushShortcut(app.packageName)
                                                 })
@@ -155,7 +169,16 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun pushShortcut(packageName: String) {
-        if (packageName.isNotNullAndEmpty()) {
+        if (packageName.isEmpty()) {
+            toastUtil.showShortToast("无法添加空白包名的快捷方式")
+        } else if (ShortcutsUtil().hasFullShortcuts()) {
+            alertUtil.showInputAlert(
+                title = "快捷方式已满",
+                inputText = "当前快捷方式已满，无法添加更多了",
+                onClick = { text, dialog ->
+                    dialog.dismiss()
+                })
+        } else {
             val appInfo = pm.getApplicationInfo(packageName, 0)
             val launchIntent = pm.getLaunchIntentForPackage(packageName) ?: return
             ShortcutsUtil().pushShortcut(
@@ -164,22 +187,7 @@ class MainActivity : ComponentActivity() {
                 appInfo.appName,
                 IconCompat.createWithBitmap(appInfo.getAppIcon()?.toBitmap()!!)
             )
-
+            toastUtil.showShortToast("已添加快捷方式")
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!", modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    ShortcutsAppTheme {
-        Greeting("Android")
     }
 }
