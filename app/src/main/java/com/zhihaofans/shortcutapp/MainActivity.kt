@@ -1,7 +1,6 @@
 package com.zhihaofans.shortcutapp
 
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -20,11 +19,15 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -67,7 +70,6 @@ class MainActivity : ComponentActivity() {
             var appPackageName by remember { mutableStateOf("") }
             var alertTitle by remember { mutableStateOf("Alert") }
             var alertMessage by remember { mutableStateOf("") }
-            var alertImage by remember { mutableStateOf<Bitmap?>(null) }
             var showTextAlert by remember { mutableStateOf(false) }
             var showDeleteAppAlert by remember { mutableStateOf(false) }
             var showDeleteAllDialog by remember { mutableStateOf(false) }
@@ -76,9 +78,48 @@ class MainActivity : ComponentActivity() {
                 Scaffold(modifier = Modifier.fillMaxSize(), topBar = {
                     TopAppBar(
                         title = { Text("Shortcut App v${AppUtil.getAppVersionName()}") },
+                        actions = {
+                            var showMenu by remember {
+                                mutableStateOf(false)
+                            }
+                            IconButton(
+                                onClick = {
+                                    showMenu = true
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.MoreVert,
+                                    contentDescription = "Menu"
+                                )
+                            }
+
+                            DropdownMenu(
+                                expanded = showMenu,
+                                onDismissRequest = {
+                                    showMenu = false
+                                }
+                            ) {
+                                DropdownMenuItem(
+                                    text = {
+                                        Text("关于")
+                                    },
+                                    onClick = {
+                                        showMenu = false
+                                        alertTitle = "关于"
+
+                                        alertMessage =
+                                            "Shortcut App v${AppUtil.getAppVersionName()}\n" +
+                                                    "Powered by zhihaofans's Android Library v" +
+                                                    io.zhihao.library.android.BuildConfig.IO_ZHIHAO_LIB_VERSION
+                                        showTextAlert = true
+                                    }
+                                )
+                            }
+                        },
                         colors = TopAppBarDefaults.topAppBarColors(
                             containerColor = MaterialTheme.colorScheme.primary,
-                            titleContentColor = MaterialTheme.colorScheme.onPrimary
+                            titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                            actionIconContentColor = MaterialTheme.colorScheme.onPrimary
                         )
                     )
                 }, floatingActionButton = {
